@@ -31,3 +31,6 @@ Selector en el menú y en la pausa: **Ultra · Alta · Media · Clásico 2005**.
 ## Controles (PC)
 WASD moverse/conducir · Ratón cámara · Shift correr · Espacio saltar/freno de mano · F entrar/salir ·
 E hablar/interactuar · Clic o Q golpear · R radio · H claxon · M mapa · C cámara · P pausa.
+
+## Versión Unity
+En `unity/BahiaDorada/` está el proyecto de Unity, con instrucciones en `unity/BahiaDorada/LEEME.md`. Hace falta un ordenador para abrirlo y crear el APK de Android.
