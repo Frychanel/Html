@@ -109,6 +109,30 @@ function textTexture(text, w, h, bg, fg, font) {
     lines.forEach((l, i) => g.fillText(l, w / 2, h / 2 + (i - (lines.length - 1) / 2) * h * 0.42, w * 0.94));
   }, false);
 }
+// Genera mapas de relieve (normal) y rugosidad/metal (G/B) desde una descripción de alturas.
+function surfaceMaps(W, Hh, fn, strength = 2.5) {
+  const n = W * Hh, hgt = new Float32Array(n).fill(1), rough = new Float32Array(n).fill(0.85), metal = new Float32Array(n);
+  const set = (x, y, w, h, hv, rv, mv = 0) => {
+    x |= 0; y |= 0; w |= 0; h |= 0;
+    for (let j = Math.max(0, y); j < Math.min(Hh, y + h); j++) for (let i = Math.max(0, x); i < Math.min(W, x + w); i++) {
+      const k = j * W + i; if (hv != null) hgt[k] = hv; if (rv != null) rough[k] = rv; metal[k] = mv;
+    }
+  };
+  fn(set, hgt, rough);
+  const mk = (cb) => { const c = document.createElement('canvas'); c.width = W; c.height = Hh; const g = c.getContext('2d'), im = g.createImageData(W, Hh); cb(im.data); g.putImageData(im, 0, 0);
+    const t = new THREE.CanvasTexture(c); t.wrapS = t.wrapT = THREE.RepeatWrapping; t.anisotropy = 4; return t; };
+  const H = (x, y) => hgt[((y + Hh) % Hh) * W + ((x + W) % W)];
+  const normal = mk(d => { for (let y = 0; y < Hh; y++) for (let x = 0; x < W; x++) {
+    let nx = (H(x - 1, y) - H(x + 1, y)) * strength, ny = (H(x, y + 1) - H(x, y - 1)) * strength, nz = 1; const l = Math.hypot(nx, ny, nz);
+    const k = (y * W + x) * 4; d[k] = (nx / l * 0.5 + 0.5) * 255; d[k + 1] = (ny / l * 0.5 + 0.5) * 255; d[k + 2] = (nz / l * 0.5 + 0.5) * 255; d[k + 3] = 255; } });
+  const orm = mk(d => { for (let i = 0; i < n; i++) { d[i * 4] = 255; d[i * 4 + 1] = rough[i] * 255; d[i * 4 + 2] = metal[i] * 255; d[i * 4 + 3] = 255; } });
+  return { normal, orm };
+}
+function withSurface(mat, maps, ns = 1) {
+  mat.normalMap = maps.normal; mat.normalScale = new THREE.Vector2(ns, ns);
+  mat.roughnessMap = maps.orm; mat.metalnessMap = maps.orm; mat.roughness = 1; mat.metalness = 1;
+  return mat;
+}
 const std = (o) => new THREE.MeshStandardMaterial(Object.assign({ roughness: 0.9, metalness: 0 }, o));
 
 function facadeMaterial(kind, wall) {
@@ -156,8 +180,18 @@ function facadeMaterial(kind, wall) {
   };
   const map = canvasTex(S, S, g => draw(g, false));
   const em = canvasTex(S, S, g => draw(g, true));
-  const m = std({ map, emissiveMap: em, emissive: 0xffffff, emissiveIntensity: 0,
-    roughness: kind === 'glass' ? 0.12 : 0.88, metalness: kind === 'glass' ? 0.55 : 0 });
+  const maps = surfaceMaps(S, S, (set) => {
+    set(0, 0, S, S, 1, kind === 'glass' ? 0.55 : 0.92);
+    if (kind === 'brick') for (let y = 0; y < S; y += 6) { set(0, y, S, 1, 0.7, 1); for (let x = (y / 6 % 2) * 7; x < S; x += 14) set(x, y, 1, 6, 0.7, 1); }
+    for (let r = 0; r < 4; r++) for (let c = 0; c < 4; c++) {
+      const x = c * 64, y = r * 64;
+      if (kind === 'glass') { set(x + 2, y + 2, 60, 46, 0.55, 0.05, 0.75); set(x + 31, y + 2, 2, 46, 0.85, 0.35, 0.6); set(x, y + 48, 64, 16, 1.05, 0.45); }
+      else { const wx = x + 13, wy = y + 12, ww = 38, wh = 36;
+        set(wx - 3, wy - 3, ww + 6, wh + 6, 0.75, 0.5); set(wx, wy, ww, wh, 0.35, 0.04, 0.7); set(wx + ww / 2 - 1, wy, 2, wh, 0.55, 0.4);
+        set(wx - 4, wy + wh + 3, ww + 8, 4, 1.35, 0.7); }
+    }
+  }, 3);
+  const m = withSurface(std({ map, emissiveMap: em, emissive: 0xffffff, emissiveIntensity: 0 }), maps, 1);
   World.windowMats.push(m);
   return m;
 }
@@ -177,7 +211,8 @@ function shopMaterial(frame) {
     g.fillStyle = 'rgba(160,190,210,0.5)'; g.fillRect(190, 58, 42, 50);
     g.fillStyle = '#c9c9c9'; g.fillRect(224, 96, 4, 10);
   };
-  const m = std({ map: canvasTex(W, H, g => draw(g, false)), emissiveMap: canvasTex(W, H, g => draw(g, true)), emissive: 0xffffff, emissiveIntensity: 0, roughness: 0.4, metalness: 0.1 });
+  const maps = surfaceMaps(W, H, (set) => { set(0, 0, W, H, 1, 0.75); set(0, 0, W, 30, 1.1, 0.4); set(10, 36, 158, 102, 0.5, 0.04, 0.6); set(184, 52, 54, 92, 0.6, 0.2, 0.5); set(10, 88, 158, 3, 0.7, 0.3); set(10, 112, 158, 3, 0.7, 0.3); }, 3);
+  const m = withSurface(std({ map: canvasTex(W, H, g => draw(g, false)), emissiveMap: canvasTex(W, H, g => draw(g, true)), emissive: 0xffffff, emissiveIntensity: 0 }), maps, 1);
   World.windowMats.push(m);
   return m;
 }
@@ -251,8 +286,14 @@ function buildWorld(scene) {
     g.fillStyle = 'rgba(0,0,0,0.25)'; g.fillRect(0, 22, w, 12); g.fillRect(0, 94, w, 12);
   });
   const L = N * CELL + ROAD; roadTex.repeat.set(L / 64, 1);
-  const roadMat = std({ map: roadTex, roughness: 0.85 });
-  const interMat = std({ map: canvasTex(128, 128, asphaltDraw), roughness: 0.85 });
+  const asphaltMaps = (W, Hh, lines) => surfaceMaps(W, Hh, (set, hgt, rough) => {
+    for (let i = 0; i < hgt.length; i++) { hgt[i] = 1 + Math.random() * 0.1; rough[i] = 0.75 + Math.random() * 0.2; }
+    for (let k = 0; k < 30; k++) { let x = Math.random() * W, y = Math.random() * Hh; for (let q = 0; q < 12; q++) { x += (Math.random() - 0.5) * 6; y += (Math.random() - 0.5) * 3; set(x, y, 2, 1, 0.6, 0.95); } }
+    if (lines) { set(0, 59, W, 3, 1.15, 0.45); set(0, 66, W, 3, 1.15, 0.45); set(0, 6, W, 3, 1.15, 0.45); set(0, Hh - 9, W, 3, 1.15, 0.45); }
+  }, 1.6);
+  const roadMat = withSurface(std({ map: roadTex }), asphaltMaps(512, 128, true), 0.35);
+  roadMat.normalMap.repeat.copy(roadTex.repeat); roadMat.roughnessMap.repeat.copy(roadTex.repeat);
+  const interMat = withSurface(std({ map: canvasTex(128, 128, asphaltDraw) }), asphaltMaps(128, 128, false), 0.35);
   const paveTex = canvasTex(256, 256, (g, w, h) => {
     noiseFill(g, w, h, '#a19e95', 0.1, 4000);
     g.strokeStyle = 'rgba(0,0,0,0.28)'; g.lineWidth = 2;
@@ -260,7 +301,10 @@ function buildWorld(scene) {
     for (let y = 0; y <= h; y += 64) { g.beginPath(); g.moveTo(0, y); g.lineTo(w, y); g.stroke(); }
     for (let i = 0; i < 12; i++) { g.fillStyle = `rgba(60,50,40,${Math.random() * 0.12})`; g.beginPath(); g.arc(Math.random() * w, Math.random() * h, Math.random() * 14 + 4, 0, 7); g.fill(); }
   });
-  const paveMat = std({ map: paveTex, roughness: 0.95 });
+  const paveMat = withSurface(std({ map: paveTex }), surfaceMaps(256, 256, (set, hgt, rough) => {
+    for (let i = 0; i < hgt.length; i++) { hgt[i] = 1 + Math.random() * 0.08; rough[i] = 0.85 + Math.random() * 0.1; }
+    for (let x = 0; x <= 256; x += 64) set(x - 2, 0, 4, 256, 0.55, 1); for (let y = 0; y <= 256; y += 64) set(0, y - 2, 256, 4, 0.55, 1);
+  }, 2.2), 1);
   const curbMat = std({ color: 0x9c9a92 });
   const roofTex = canvasTex(128, 128, (g, w, h) => noiseFill(g, w, h, '#3c3d40', 0.2, 4000));
   const roofMat = std({ map: roofTex });

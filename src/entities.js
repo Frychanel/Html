@@ -117,6 +117,10 @@ const SH = {
   rim: new THREE.MeshStandardMaterial({ color: 0xb0b4b8, roughness: 0.25, metalness: 0.9 }),
 };
 World.glowMats.push(SH.head);
+const AO_GEO = new THREE.PlaneGeometry(1, 1).rotateX(-Math.PI / 2); AO_GEO.__shared = true;
+const AO_MAT = new THREE.MeshBasicMaterial({ color: 0x000000, transparent: true, depthWrite: false, opacity: 0.75,
+  alphaMap: (() => { const c = document.createElement('canvas'); c.width = c.height = 64; const g = c.getContext('2d'), gr = g.createRadialGradient(32, 32, 4, 32, 32, 32);
+    gr.addColorStop(0, '#fff'); gr.addColorStop(0.6, '#999'); gr.addColorStop(1, '#000'); g.fillStyle = gr; g.fillRect(0, 0, 64, 64); return new THREE.CanvasTexture(c); })() });
 const wheelCache = {};
 function wheelGeos(r, chrome) {
   const k = r + '' + chrome; if (wheelCache[k]) return wheelCache[k];
@@ -173,6 +177,7 @@ function makeCarMesh(typeKey, color) {
   if (t.stripe) for (const sx of [-0.22, 0.22]) {
     const s = add(extrudeSide(bodyPts, 0.2, 0), new THREE.MeshStandardMaterial({ color: 0xf2f2f2, roughness: 0.3 }), sx); s.scale.set(1, 1.003, 1.002); s.position.y = 0.002;
   }
+  const ao = new THREE.Mesh(AO_GEO, AO_MAT); ao.scale.set(W * 1.35, L * 1.2, 1); ao.position.y = 0.035; ao.renderOrder = 1; g.add(ao);
   const parts = { group: g, body, paint, wheels: [], bar: null };
   if (t.police) {
     add(bx(W + 0.03, (t.hb - t.base) * 0.55, 2.2), SH.white, 0, (t.base + t.hb) / 2 + 0.02, -0.15);

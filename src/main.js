@@ -12,8 +12,16 @@ if (isTouch) document.body.classList.add('touch');
 
 // ---------- ajustes ----------
 const SET_KEY = 'bahia-dorada-settings';
-const settings = { gfx: 'real', intro: 'cine' };
+const settings = { gfx: isTouch ? 'media' : 'alta', intro: 'cine' };
 try { Object.assign(settings, JSON.parse(localStorage.getItem(SET_KEY) || '{}')); } catch (e) { }
+if (settings.gfx === 'real') settings.gfx = isTouch ? 'media' : 'alta';
+const GFX = {
+  ultra: { label: 'Ultra', pr: 2, shadow: 4096, post: true, levels: 4, msaa: 4, lights: 8, fog: [200, 650], env: true },
+  alta: { label: 'Alta', pr: 1.5, shadow: 2048, post: true, levels: 3, msaa: 4, lights: 4, fog: [170, 580], env: true },
+  media: { label: 'Media', pr: 1.2, shadow: 1024, post: false, levels: 0, msaa: 0, lights: 0, fog: [150, 520], env: true },
+  retro: { label: 'Clásico 2005', pr: 0.7, shadow: 1024, post: false, levels: 0, msaa: 0, lights: 0, fog: [70, 300], env: false },
+};
+const GFX_ORDER = ['ultra', 'alta', 'media', 'retro'];
 const saveSettings = () => { try { localStorage.setItem(SET_KEY, JSON.stringify(settings)); } catch (e) { } };
 
 // ---------- render ----------
@@ -23,6 +31,7 @@ renderer.outputEncoding = THREE.sRGBEncoding;
 renderer.toneMapping = THREE.ACESFilmicToneMapping; renderer.toneMappingExposure = 0.95;
 renderer.setSize(innerWidth, innerHeight);
 renderer.shadowMap.enabled = true; renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+Post.init(renderer);
 const scene = new THREE.Scene();
 const camera = new THREE.PerspectiveCamera(62, innerWidth / innerHeight, 0.1, 700);
 scene.fog = new THREE.Fog(0xbfdcf2, 160, 560);
@@ -30,8 +39,8 @@ const hemi = new THREE.HemisphereLight(0xcfe6ff, 0x6a6a52, 0.35); scene.add(hemi
 const sun = new THREE.DirectionalLight(0xfff2d8, 1.7);
 sun.castShadow = true; sun.shadow.mapSize.set(isTouch ? 1024 : 2048, isTouch ? 1024 : 2048);
 Object.assign(sun.shadow.camera, { left: -80, right: 80, top: 80, bottom: -80, near: 10, far: 520 });
-sun.shadow.bias = -0.0004; sun.shadow.normalBias = 0.02; scene.add(sun); scene.add(sun.target);
-addEventListener('resize', () => { camera.aspect = innerWidth / innerHeight; camera.updateProjectionMatrix(); renderer.setSize(innerWidth, innerHeight); checkOrient(); });
+sun.shadow.bias = -0.0008; sun.shadow.normalBias = 0.06; scene.add(sun); scene.add(sun.target);
+addEventListener('resize', () => { camera.aspect = innerWidth / innerHeight; camera.updateProjectionMatrix(); renderer.setSize(innerWidth, innerHeight); Post.setSize(innerWidth, innerHeight); checkOrient(); });
 
 buildWorld(scene);
 scene.traverse(o => { if (o.material && !Array.isArray(o.material) && o.material.isMeshStandardMaterial) o.material.envMapIntensity = o.material.metalness > 0.3 ? 1 : 0.4; });
@@ -44,17 +53,54 @@ function updateEnv(force) {
   envT = G.time;
   const rt = pmrem.fromScene(envScene, 0, 1, 1000);
   if (envRT) envRT.dispose(); envRT = rt;
-  scene.environment = settings.gfx === 'real' ? rt.texture : null;
+  scene.environment = settings.gfx !== 'retro' ? rt.texture : null;
+}
+// luces dinámicas: farolas cercanas + faros del coche
+const lampLights = [];
+const headL = new THREE.SpotLight(0xfff1d6, 0, 70, 0.5, 0.55, 1.4); headL.position.set(0, -100, 0); scene.add(headL); scene.add(headL.target);
+const coneMat = new THREE.MeshBasicMaterial({ color: 0xfff0c0, transparent: true, opacity: 0, blending: THREE.AdditiveBlending, depthWrite: false, side: THREE.DoubleSide });
+const coneGeo = new THREE.ConeGeometry(3.2, 16, 20, 1, true).translate(0, -8, 0).rotateX(-Math.PI / 2);
+const cones = [new THREE.Mesh(coneGeo, coneMat), new THREE.Mesh(coneGeo, coneMat)]; cones.forEach(c => { c.visible = false; scene.add(c); });
+function setLampCount(n) {
+  while (lampLights.length > n) scene.remove(lampLights.pop());
+  while (lampLights.length < n) { const l = new THREE.PointLight(0xffc98a, 0, 30, 1.6); scene.add(l); lampLights.push(l); }
+}
+let lampT = 0;
+function updateDynLights(dt) {
+  lampT -= dt;
+  const nightK = clamp((night - 0.25) / 0.5, 0, 1);
+  if (lampT <= 0 && lampLights.length) {
+    lampT = 0.4;
+    const cx = camera.position.x, cz = camera.position.z, list = [];
+    for (const p of World.lights) { const d = (p.x - cx) ** 2 + (p.z - cz) ** 2; if (d < 140 * 140) list.push([d, p]); }
+    list.sort((a, b) => a[0] - b[0]);
+    lampLights.forEach((l, i) => { const e = list[i]; if (e) { l.position.set(e[1].x - 1.63, 7.2, e[1].z - 1.63); l.userData.on = true; } else l.userData.on = false; });
+  }
+  for (const l of lampLights) l.intensity = l.userData.on ? 2.2 * nightK : 0;
+  const c = player.car, on = !!c && nightK > 0 && GFX[settings.gfx].lights > 0;
+  headL.intensity = on ? 3.5 * nightK : 0;
+  cones.forEach(m => m.visible = on); coneMat.opacity = 0.05 * nightK;
+  if (c) {
+    const fx = Math.sin(c.h), fz = Math.cos(c.h), hl = c.t.len / 2;
+    headL.position.set(c.x + fx * hl, c.y + 0.8, c.z + fz * hl); headL.target.position.set(c.x + fx * 25, 0, c.z + fz * 25);
+    cones.forEach((m, i) => { const s = i ? 1 : -1, ox = Math.cos(c.h) * s * (c.t.wid / 2 - 0.3), oz = -Math.sin(c.h) * s * (c.t.wid / 2 - 0.3);
+      m.position.set(c.x + fx * (hl + 0.05) + ox, c.y + (c.t.base + c.t.hf) / 2 + 0.08, c.z + fz * (hl + 0.05) + oz); m.rotation.set(0.12, c.h, 0, 'YXZ'); });
+  }
 }
 function applyGfx() {
-  const real = settings.gfx === 'real';
-  renderer.setPixelRatio(real ? Math.min(devicePixelRatio, isTouch ? 1.3 : 1.6) : (isTouch ? 0.6 : 0.7));
+  const q = GFX[settings.gfx] || GFX.alta, real = settings.gfx !== 'retro';
+  renderer.setPixelRatio(Math.min(devicePixelRatio, isTouch ? Math.min(q.pr, 1.3) : q.pr) * (real ? 1 : 1));
+  if (!real) renderer.setPixelRatio(isTouch ? 0.6 : 0.7);
   renderer.setSize(innerWidth, innerHeight);
+  if (sun.shadow.mapSize.x !== q.shadow) { sun.shadow.mapSize.set(q.shadow, q.shadow); if (sun.shadow.map) { sun.shadow.map.dispose(); sun.shadow.map = null; } }
+  const ext = q.shadow >= 4096 ? 110 : 80; Object.assign(sun.shadow.camera, { left: -ext, right: ext, top: ext, bottom: -ext }); sun.shadow.camera.updateProjectionMatrix();
+  Post.configure(q.post, q.levels, q.msaa); Post.setSize(innerWidth, innerHeight);
+  setLampCount(q.lights);
   canvas.classList.toggle('retro', !real);
-  scene.environment = real && envRT ? envRT.texture : null;
-  scene.fog.near = real ? 160 : 70; scene.fog.far = real ? 560 : 300;
+  scene.environment = q.env && envRT ? envRT.texture : null;
+  scene.fog.near = q.fog[0]; scene.fog.far = q.fog[1];
   for (const c of World.clouds) c.visible = real;
-  document.querySelectorAll('.gfxlabel').forEach(e => e.textContent = real ? 'Realista' : 'Clásico 2005');
+  document.querySelectorAll('.gfxlabel').forEach(e => e.textContent = q.label);
   document.querySelectorAll('.introlabel').forEach(e => e.textContent = settings.intro === 'cine' ? 'Cinemática' : 'Clásica (viñetas)');
 }
 
@@ -815,7 +861,7 @@ function respawn() {
 
 // ---------- día / noche ----------
 const C = (h) => new THREE.Color(h);
-const SKY = { dayTop: C(0x2f6fc0), dayHor: C(0xbcd9ef), setTop: C(0x34437a), setHor: C(0xf09a5a), nightTop: C(0x02040c), nightHor: C(0x0d1630) };
+const SKY = { dayTop: C(0x2f6fc0), dayHor: C(0xbcd9ef), setTop: C(0x34437a), setHor: C(0xf09a5a), nightTop: C(0x07102a), nightHor: C(0x22335e) };
 const tmpA = new THREE.Color(), tmpB = new THREE.Color(), WHITE = C(0xffffff), _sd = new THREE.Vector3();
 const TLON = [0xff2a1a, 0xffb000, 0x2aff6a], TLOFF = [0x3a0a08, 0x3a2a00, 0x0a3a18];
 let night = 0;
@@ -832,8 +878,8 @@ function updateDayNight(dt) {
   u.sunDir.value.copy(_sd);
   u.sunColor.value.setRGB(1, 0.75 + 0.25 * day, 0.5 + 0.5 * day).multiplyScalar(elev > -0.05 ? 1 : 0.12);
   scene.fog.color.copy(tmpB);
-  sun.intensity = 0.12 + 1.6 * day * (1 - set * 0.4); hemi.intensity = 0.15 + 0.3 * day;
-  sun.color.setRGB(1, 0.78 + 0.2 * day, 0.6 + 0.35 * day);
+  sun.intensity = 0.45 * night + 1.6 * day * (1 - set * 0.4); hemi.intensity = 0.32 + 0.15 * day;
+  if (day > 0.05) sun.color.setRGB(1, 0.78 + 0.2 * day, 0.6 + 0.35 * day); else sun.color.setRGB(0.55, 0.68, 1);
   hemi.color.copy(tmpA).lerp(WHITE, 0.5);
   const tx = player.x, tz = player.z;
   sun.position.set(tx + _sd.x * 220, Math.max(60, _sd.y * 230), tz + _sd.z * 220); sun.target.position.set(tx, 0, tz);
@@ -1135,7 +1181,7 @@ async function startClassic() {
     G.time = s.t * 60; focusOn(s.look[0], s.look[2]);
     for (let k = 0; k < 4; k++) simWorld(0.05);
     setShotCam(s, 0.5); updateDayNight(0); updateEnv(true);
-    renderer.render(scene, camera);
+    draw();
     imgs.push(canvas.toDataURL('image/jpeg', 0.82));
     await new Promise(r => requestAnimationFrame(r));
   }
@@ -1163,14 +1209,15 @@ function updateMenuCam(dt) {
 }
 
 // ---------- bucle ----------
+function draw() { if (Post.on) Post.render(scene, camera, G.clock, night); else { renderer.setRenderTarget(null); renderer.render(scene, camera); } }
 let last = performance.now(), hudT = 0;
 function frame(now) {
   requestAnimationFrame(frame);
   const dt = Math.min(0.05, (now - last) / 1000); last = now;
-  if (G.mode === 'intro') { updateCine(dt); updateDayNight(dt); renderer.render(scene, camera); return; }
+  if (G.mode === 'intro') { updateCine(dt); updateDayNight(dt); updateDynLights(dt); draw(); return; }
   if (G.mode === 'introClassic') return;
-  if (G.mode === 'menu') { updateMenuCam(dt); updateDayNight(dt); renderer.render(scene, camera); return; }
-  if (G.paused || G.portrait) { renderer.render(scene, camera); return; }
+  if (G.mode === 'menu') { updateMenuCam(dt); updateDayNight(dt); updateDynLights(dt); draw(); return; }
+  if (G.paused || G.portrait) { draw(); return; }
   G.clock += dt; G.time = (G.time + dt) % 1440;
   if (G.mode === 'play') {
     if (player.car) updatePlayerCar(dt); else updatePlayerFoot(dt);
@@ -1206,7 +1253,7 @@ function frame(now) {
   hudT -= dt; if (hudT <= 0) { drawMinimap(); hudT = 1 / 30; }
   if (G.bigmap) drawBigMap();
   if (Math.floor(G.clock) % 30 === 0 && Math.floor(G.clock - dt) % 30 !== 0) save();
-  renderer.render(scene, camera);
+  updateDynLights(dt); draw();
 }
 
 function startGame() {
@@ -1226,7 +1273,7 @@ function startGame() {
 }
 $('play').addEventListener('click', startGame);
 $('optIntro').addEventListener('click', () => { settings.intro = settings.intro === 'cine' ? 'classic' : 'cine'; saveSettings(); applyGfx(); });
-document.querySelectorAll('.optGfx').forEach(b => b.addEventListener('click', () => { settings.gfx = settings.gfx === 'real' ? 'retro' : 'real'; saveSettings(); applyGfx(); }));
+document.querySelectorAll('.optGfx').forEach(b => b.addEventListener('click', () => { settings.gfx = GFX_ORDER[(GFX_ORDER.indexOf(settings.gfx) + 1) % GFX_ORDER.length]; saveSettings(); applyGfx(); }));
 $('optReplay').addEventListener('click', () => { $('title').classList.add('hidden'); startPresentation(); });
 $('resume').addEventListener('click', () => { setPaused(false); if (!isTouch && canvas.requestPointerLock) canvas.requestPointerLock(); });
 $('reset').addEventListener('click', () => { if (confirm('¿Borrar la partida guardada?')) { try { localStorage.removeItem(SAVE_KEY); } catch (e) { } location.reload(); } });

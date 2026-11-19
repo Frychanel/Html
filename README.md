@@ -14,6 +14,13 @@ Juego 3D de mundo abierto **original** que se juega en el navegador (HTML + Thre
 - **Dos presentaciones**: *Cinemática* (planos de cámara con créditos) o *Clásica* (viñetas de cómic).
 - **Dos estilos gráficos**: *Realista* o *Clásico 2005*.
 
+## Calidad gráfica (v3)
+Selector en el menú y en la pausa: **Ultra · Alta · Media · Clásico 2005**.
+- Postprocesado propio en HDR: brillo multinivel (bloom), tonemapping de cine, gradación de color, viñeta, grano y antialiasing MSAA.
+- Mapas de relieve y rugosidad en fachadas, ladrillo, aceras y asfalto; cristales que reflejan el cielo.
+- Noche con farolas que iluminan el suelo y faros del coche con haz de luz.
+- Sombras de hasta 4096 px y sombra de contacto bajo los coches.
+
 ## Controles (PC)
 WASD moverse/conducir · Ratón cámara · Shift correr · Espacio saltar/freno de mano · F entrar/salir ·
 E hablar/interactuar · Clic o Q golpear · R radio · H claxon · M mapa · C cámara · P pausa.
