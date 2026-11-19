@@ -159,6 +159,9 @@ const Sound = {
       o.connect(g); g.connect(this.sfx); o.start(t); o.stop(t + gap * 2);
     });
   },
+  punch() { if (!this.ctx) return; const t = this.ctx.currentTime; this.noise(t, 0.09, 'lowpass', 700, 0.9, this.sfx); this.tones([40], 0.06, 'sine', 0.25); },
+  whoosh() { if (this.ctx) this.noise(this.ctx.currentTime, 0.12, 'bandpass', 1200, 0.15, this.sfx); },
+  cash() { this.tones([88, 95], 0.07, 'square', 0.06); },
   pickup() { this.tones([84, 88, 91, 96], 0.06, 'square', 0.07); },
   checkpoint() { this.tones([79, 86], 0.08, 'triangle', 0.18); },
   pass() { this.tones([67, 71, 74, 79, 83, 86, 91], 0.11, 'square', 0.09); },

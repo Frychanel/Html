@@ -1,13 +1,16 @@
-* { box-sizing: border-box; }
-html, body { margin: 0; height: 100%; overflow: hidden; background: #000; color: #fff;
+* { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+html, body { margin: 0; height: 100%; overflow: hidden; background: #000; color: #fff; overscroll-behavior: none;
   font-family: 'Bebas Neue', Impact, 'Arial Narrow', sans-serif; user-select: none; -webkit-user-select: none; touch-action: none; }
 #c { position: fixed; inset: 0; width: 100%; height: 100%; display: block; }
+#c.retro { image-rendering: pixelated; filter: saturate(1.25) sepia(0.2) contrast(1.08) brightness(1.03); }
 .hidden { display: none !important; }
+#loading { position: fixed; inset: 0; display: flex; align-items: center; justify-content: center; background: #000; z-index: 50;
+  font-family: 'Rubik Mono One', sans-serif; color: #f4d64e; font-size: 22px; letter-spacing: 2px; }
 
+/* ---------- HUD (escritorio) ---------- */
 #hud { position: fixed; inset: 0; pointer-events: none; }
-.outline { text-shadow: 2px 2px 0 #000, -2px -2px 0 #000, 2px -2px 0 #000, -2px 2px 0 #000; }
 #topright { position: absolute; top: 14px; right: 18px; text-align: right; }
-#clock, #money, #stars, #records { text-shadow: 2px 2px 0 #000, -2px -2px 0 #000, 2px -2px 0 #000, -2px 2px 0 #000, 0 3px 0 #000; }
+#clock, #money, #stars, #records, #timer { text-shadow: 2px 2px 0 #000, -2px -2px 0 #000, 2px -2px 0 #000, -2px 2px 0 #000, 0 3px 0 #000; }
 #clock { font-size: 40px; letter-spacing: 2px; color: #e8e8e8; }
 #healthbar { width: 150px; height: 14px; border: 3px solid #000; background: #4a0d0d; margin: 4px 0 4px auto; }
 #healthfill { height: 100%; width: 100%; background: linear-gradient(#ff5c5c, #b11b1b); transition: width .2s; }
@@ -18,69 +21,148 @@ html, body { margin: 0; height: 100%; overflow: hidden; background: #000; color:
 #stars.flash span.on { animation: blink .35s steps(2) infinite; }
 @keyframes blink { 50% { color: #fff; } }
 #records { font-size: 22px; color: #f4d64e; margin-top: 2px; }
-
+#timer { font-size: 38px; margin-top: 6px; }
 #minimap { position: absolute; left: 22px; bottom: 22px; width: 190px; height: 190px; border-radius: 50%;
-  border: 4px solid #111; box-shadow: 0 0 0 2px rgba(255,255,255,.25); }
-#speedo { position: absolute; left: 230px; bottom: 28px; font-size: 38px; text-shadow: 2px 2px 0 #000, -2px -2px 0 #000; color: #fff; }
+  border: 4px solid #111; box-shadow: 0 0 0 2px rgba(255,255,255,.25), 0 4px 14px rgba(0,0,0,.5); }
+#speedo { position: absolute; left: 230px; bottom: 28px; font-size: 38px; text-shadow: 2px 2px 0 #000, -2px -2px 0 #000; }
 #zone { position: absolute; right: 28px; bottom: 36px; font-family: 'Rubik Mono One', sans-serif; font-size: 34px; color: #e5e5e5;
   text-shadow: 3px 3px 0 #000, -2px -2px 0 #000; opacity: 0; transition: opacity .6s; }
 #vehname { position: absolute; right: 28px; bottom: 82px; font-family: 'Rubik Mono One', sans-serif; font-size: 26px; color: #9fd0ff;
   text-shadow: 3px 3px 0 #000, -2px -2px 0 #000; opacity: 0; transition: opacity .6s; }
-#radio { position: absolute; top: 18px; left: 50%; transform: translateX(-50%); font-family: 'Rubik Mono One', sans-serif;
+#radio { position: absolute; top: 18px; left: 50%; transform: translateX(-50%); font-family: 'Rubik Mono One', sans-serif; white-space: nowrap;
   font-size: 22px; color: #f2a93b; text-shadow: 2px 2px 0 #000, -2px -2px 0 #000; opacity: 0; transition: opacity .5s; }
-#big { position: absolute; top: 30%; left: 0; right: 0; text-align: center; font-family: 'Rubik Mono One', sans-serif;
+#big { position: absolute; top: 28%; left: 0; right: 0; text-align: center; font-family: 'Rubik Mono One', sans-serif;
   font-size: 46px; color: #f4d64e; text-shadow: 4px 4px 0 #000, -3px -3px 0 #000, 3px -3px 0 #000, -3px 3px 0 #000;
   white-space: pre-line; opacity: 0; transition: opacity .5s; padding: 0 16px; }
-#sub { position: absolute; bottom: 16%; left: 50%; transform: translateX(-50%); width: min(820px, 90vw); text-align: center;
+#sub { position: absolute; bottom: 15%; left: 50%; transform: translateX(-50%); width: min(820px, 90vw); text-align: center;
   font-family: Arial, Helvetica, sans-serif; font-weight: bold; font-size: 22px; line-height: 1.3;
   text-shadow: 2px 2px 0 #000, -1px -1px 0 #000, 1px -1px 0 #000, -1px 1px 0 #000; }
-#sub .y { color: #f4d64e; } #sub .g { color: #63d46f; } #sub .r { color: #ff6b6b; } #sub .b { color: #7ab8ff; }
-#timer { position: absolute; top: 210px; right: 20px; font-size: 38px; text-shadow: 2px 2px 0 #000, -2px -2px 0 #000; }
-#prompt { position: absolute; top: 18px; left: 18px; max-width: 360px; background: rgba(0,0,0,.7); padding: 10px 14px;
-  font-family: Arial, sans-serif; font-size: 16px; line-height: 1.35; border-radius: 4px; }
+.y { color: #f4d64e; } .g { color: #63d46f; } .r { color: #ff6b6b; } .b { color: #7ab8ff; }
+#prompt { position: absolute; top: 18px; left: 18px; max-width: 380px; background: rgba(0,0,0,.72); padding: 10px 14px;
+  font-family: Arial, sans-serif; font-size: 16px; line-height: 1.35; border-radius: 4px; border-left: 4px solid #f4d64e; }
 #prompt:empty { display: none; }
 #hint { position: absolute; bottom: 6px; right: 10px; font-family: Arial, sans-serif; font-size: 12px; opacity: .55; }
-#help { position: absolute; top: 90px; left: 18px; max-width: 420px; background: rgba(0,0,0,.75); padding: 12px 16px;
+#help { position: absolute; top: 90px; left: 18px; max-width: 460px; background: rgba(0,0,0,.78); padding: 12px 16px;
   font-family: Arial, sans-serif; font-size: 14px; line-height: 1.5; border-radius: 4px; }
 #help b { color: #f4d64e; }
 #fade { position: absolute; inset: 0; background: #000; opacity: 0; transition: opacity .8s; }
+#bubbles { position: absolute; inset: 0; overflow: hidden; }
+.bubble { position: absolute; left: 0; top: 0; max-width: 220px; padding: 6px 10px; background: #fff; color: #111; border-radius: 12px;
+  font-family: Arial, sans-serif; font-size: 14px; font-weight: bold; line-height: 1.25; box-shadow: 0 2px 6px rgba(0,0,0,.35); white-space: normal; text-align: center; }
+.bubble::after { content: ''; position: absolute; left: 50%; bottom: -8px; margin-left: -6px; border: 6px solid transparent; border-top: 8px solid #fff; border-bottom: 0; }
+#talk { position: absolute; right: 24px; top: 50%; transform: translateY(-50%); pointer-events: auto; display: flex; flex-direction: column; gap: 6px;
+  background: rgba(0,0,0,.78); padding: 12px; border-radius: 6px; border-left: 4px solid #f4d64e; }
+#talk .tt { font-family: Arial, sans-serif; font-size: 14px; margin-bottom: 4px; }
+#talk button { font-family: Arial, sans-serif; font-weight: bold; font-size: 16px; padding: 8px 14px; margin: 0; text-align: left; background: #f4d64e;
+  box-shadow: 3px 3px 0 #000; border: 2px solid #000; }
+#talk button i { font-style: normal; display: inline-block; width: 22px; height: 22px; line-height: 22px; text-align: center; background: #111; color: #f4d64e; border-radius: 50%; margin-right: 8px; font-size: 13px; }
 
 #bigmap { position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%); width: min(92vw, 92vh); height: min(92vw, 92vh);
-  border: 4px solid #111; box-shadow: 0 0 40px #000; z-index: 5; }
+  border: 4px solid #111; box-shadow: 0 0 40px #000; z-index: 6; }
 
+/* ---------- menú y presentaciones ---------- */
 #title, #pause { position: fixed; inset: 0; display: flex; align-items: center; justify-content: center; z-index: 10;
-  background: linear-gradient(180deg, rgba(20,10,40,.35), rgba(0,0,0,.75)); padding: 16px; }
+  background: linear-gradient(180deg, rgba(20,10,40,.3), rgba(0,0,0,.7)); padding: 16px; overflow: auto; }
+#title.classic { justify-content: flex-end; background: linear-gradient(90deg, rgba(0,0,0,0) 30%, rgba(0,0,0,.75) 62%); }
+#title.classic .tbox { max-width: 440px; margin-right: 3vw; }
 .tbox { text-align: center; max-width: 640px; }
-#title h1, #pause h1 { font-family: 'Rubik Mono One', Impact, sans-serif; font-size: clamp(48px, 13vw, 104px); line-height: .95; margin: 0;
-  color: #f4d64e; text-shadow: 5px 5px 0 #000, -3px -3px 0 #000, 3px -3px 0 #000, -3px 3px 0 #000, 0 0 40px rgba(255,140,40,.6);
-  transform: rotate(-3deg); }
-#title h2 { font-size: clamp(22px, 5vw, 34px); color: #ff8a3d; margin: 14px 0 8px; letter-spacing: 3px; text-shadow: 2px 2px 0 #000; font-weight: normal; }
-.story { font-family: Arial, sans-serif; font-size: 16px; line-height: 1.5; color: #ddd; margin: 6px auto 16px; max-width: 520px; text-shadow: 1px 1px 0 #000; }
-button { font-family: 'Rubik Mono One', Impact, sans-serif; font-size: 26px; padding: 12px 42px; border: 4px solid #000; background: #f4d64e;
+#title h1, #pause h1 { font-family: 'Rubik Mono One', Impact, sans-serif; font-size: clamp(40px, 11vw, 100px); line-height: .95; margin: 0;
+  color: #f4d64e; text-shadow: 5px 5px 0 #000, -3px -3px 0 #000, 3px -3px 0 #000, -3px 3px 0 #000, 0 0 40px rgba(255,140,40,.6); transform: rotate(-3deg); }
+#title.classic h1 { font-size: clamp(36px, 7vw, 76px); }
+#title h2 { font-size: clamp(20px, 4.5vw, 32px); color: #ff8a3d; margin: 12px 0 6px; letter-spacing: 3px; text-shadow: 2px 2px 0 #000; font-weight: normal; }
+.story { font-family: Arial, sans-serif; font-size: 15px; line-height: 1.5; color: #ddd; margin: 6px auto 14px; max-width: 520px; text-shadow: 1px 1px 0 #000; }
+button { font-family: 'Rubik Mono One', Impact, sans-serif; font-size: 24px; padding: 12px 40px; border: 4px solid #000; background: #f4d64e;
   color: #111; cursor: pointer; box-shadow: 5px 5px 0 #000; margin: 6px; }
 button:hover { background: #ffe57a; }
 button:active { transform: translate(3px,3px); box-shadow: 2px 2px 0 #000; }
-button.ghost { background: #333; color: #ddd; font-size: 14px; padding: 8px 16px; }
-.ctrl { display: grid; grid-template-columns: 1fr 1fr; gap: 4px 18px; font-family: Arial, sans-serif; font-size: 14px; color: #ccc;
-  margin: 18px auto 0; max-width: 480px; text-align: left; }
+button.ghost { background: #333; color: #ddd; font-size: 13px; padding: 8px 16px; }
+.opts { display: flex; flex-wrap: wrap; justify-content: center; gap: 4px; margin-top: 6px; }
+button.opt { font-family: Arial, sans-serif; font-size: 13px; padding: 7px 12px; background: rgba(20,20,20,.85); color: #eee; border: 2px solid #f4d64e; box-shadow: 3px 3px 0 #000; }
+button.opt b { color: #f4d64e; }
+.ctrl { display: grid; grid-template-columns: 1fr 1fr; gap: 4px 18px; font-family: Arial, sans-serif; font-size: 13px; color: #ccc; margin: 14px auto 0; max-width: 480px; text-align: left; }
 .ctrl b { color: #f4d64e; }
-.small { font-family: Arial, sans-serif; font-size: 13px; color: #aaa; }
+.small { font-family: Arial, sans-serif; font-size: 12px; color: #aaa; }
+body.touch .desk { display: none; }
 
+#cine { position: fixed; inset: 0; z-index: 9; cursor: pointer; }
+#cine .bar { position: absolute; left: 0; right: 0; height: 12vh; background: #000; }
+#cine .top { top: 0; } #cine .bot { bottom: 0; }
+#cinetext { position: absolute; left: 6vw; bottom: 17vh; opacity: 0; }
+#cinetext.show { animation: cineIn 4.6s ease forwards; }
+#cinetext .cap { font-family: 'Rubik Mono One', sans-serif; font-size: clamp(20px, 4vw, 44px); color: #f4d64e; text-shadow: 3px 3px 0 #000; }
+#cinetext .csub { font-family: 'Bebas Neue', sans-serif; font-size: clamp(18px, 3vw, 30px); letter-spacing: 6px; color: #fff; text-shadow: 2px 2px 0 #000; }
+@keyframes cineIn { 0% { opacity: 0; transform: translateX(-30px); } 15% { opacity: 1; transform: none; } 80% { opacity: 1; } 100% { opacity: 0; } }
+#skip { position: absolute; right: 3vw; bottom: 4vh; font-family: Arial, sans-serif; font-size: 13px; color: #bbb; }
+
+#collage { position: fixed; inset: 0; z-index: 8; overflow: hidden;
+  background: radial-gradient(circle, rgba(0,0,0,.18) 1.5px, transparent 1.6px) 0 0/10px 10px, linear-gradient(135deg, #f7a531, #d4402c 60%, #5a1a3a); }
+#collage .loadtxt { position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; font-family: 'Bangers', Impact, sans-serif; font-size: 34px; color: #fff; text-shadow: 3px 3px 0 #000; letter-spacing: 2px; }
+#collage .panel { position: absolute; border: 6px solid #111; background: #111; box-shadow: 8px 8px 0 rgba(0,0,0,.6); opacity: 0; animation: panelIn .6s cubic-bezier(.2,1.4,.4,1) forwards; overflow: hidden; }
+#collage .panel img { display: block; width: 100%; height: 100%; object-fit: cover; }
+#collage .panel span { position: absolute; left: 8px; top: 8px; background: #fffbe0; color: #111; font-family: 'Bangers', Impact, sans-serif; font-size: clamp(14px, 2vw, 24px);
+  padding: 3px 10px; border: 3px solid #111; letter-spacing: 1px; }
+#collage .p0 { left: 3vw; top: 4vh; width: 34vw; height: 40vh; --r: -4deg; }
+#collage .p1 { left: 33vw; top: 8vh; width: 26vw; height: 34vh; --r: 3deg; }
+#collage .p2 { left: 5vw; top: 48vh; width: 26vw; height: 44vh; --r: 2deg; }
+#collage .p3 { left: 29vw; top: 46vh; width: 32vw; height: 46vh; --r: -2deg; }
+@keyframes panelIn { 0% { opacity: 0; transform: scale(.6) rotate(calc(var(--r) * 4)); } 100% { opacity: 1; transform: rotate(var(--r)); } }
+
+#rotate { position: fixed; inset: 0; z-index: 100; background: #0b0b14; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 20px;
+  font-family: Arial, sans-serif; font-size: 18px; text-align: center; padding: 20px; }
+#rotate .phone { width: 60px; height: 100px; border: 5px solid #f4d64e; border-radius: 10px; animation: rot 2s ease-in-out infinite; }
+@keyframes rot { 0%, 20% { transform: rotate(0); } 60%, 100% { transform: rotate(-90deg); } }
+
+/* ---------- controles táctiles ---------- */
 #touch { position: fixed; inset: 0; pointer-events: none; z-index: 4; }
-#joy { position: absolute; left: 26px; bottom: 230px; width: 130px; height: 130px; border-radius: 50%; background: rgba(255,255,255,.12);
-  border: 2px solid rgba(255,255,255,.3); pointer-events: auto; }
-#knob { position: absolute; left: 40px; top: 40px; width: 50px; height: 50px; border-radius: 50%; background: rgba(255,255,255,.45); }
-#tbtns { position: absolute; right: 18px; bottom: 90px; display: grid; grid-template-columns: repeat(2, 64px); gap: 10px; pointer-events: auto; }
-#tbtns button { width: 64px; height: 64px; padding: 0; font-size: 26px; border-radius: 50%; background: rgba(244,214,78,.75); box-shadow: none; margin: 0; }
+#joyzone { position: absolute; left: 0; bottom: 0; width: 42vw; height: 72vh; pointer-events: auto; }
+#joy { position: absolute; left: 5vw; bottom: 7vh; width: 30vh; height: 30vh; border-radius: 50%; background: rgba(255,255,255,.1);
+  border: 2px solid rgba(255,255,255,.35); pointer-events: none; opacity: .55; transition: opacity .15s; }
+#joy.on { opacity: 1; }
+#knob { position: absolute; left: 50%; top: 50%; width: 42%; height: 42%; margin: -21% 0 0 -21%; border-radius: 50%; background: rgba(255,255,255,.55); box-shadow: 0 2px 8px rgba(0,0,0,.4); }
+#touch button { pointer-events: auto; position: absolute; margin: 0; padding: 0; border-radius: 50%; border: 3px solid rgba(0,0,0,.6);
+  background: rgba(30,30,34,.55); color: #fff; box-shadow: 0 3px 10px rgba(0,0,0,.4); font-family: Arial, sans-serif; font-size: 6vh; line-height: 1;
+  display: flex; flex-direction: column; align-items: center; justify-content: center; backdrop-filter: blur(2px); }
+#touch button span { font-size: 1.7vh; font-weight: bold; letter-spacing: .5px; margin-bottom: .4vh; opacity: .85; }
+#touch button.on { background: rgba(244,214,78,.75); color: #111; transform: scale(.94); }
+#touch .b-main { right: 4vh; bottom: 5vh; width: 24vh; height: 24vh; background: rgba(244,214,78,.45); font-size: 9vh; }
+#touch .b-a { right: 6vh; bottom: 32vh; width: 15vh; height: 15vh; }
+#touch .b-b { right: 23vh; bottom: 25vh; width: 15vh; height: 15vh; }
+#touch .b-c { right: 31vh; bottom: 7vh; width: 15vh; height: 15vh; }
+#touch .b-d { right: 21vh; bottom: 43vh; width: 13vh; height: 13vh; }
+#touch .b-e { right: 31vh; bottom: 7vh; width: 15vh; height: 15vh; }
+#touch.incar .b-c { right: 4vh; bottom: 50vh; width: 13vh; height: 13vh; }
+#touch #btnTalk { background: rgba(70,170,255,.6); font-size: 6vh; }
+#touch .steer { bottom: 6vh; width: 20vh; height: 20vh; font-size: 8vh; border-radius: 18px; }
+#touch .sl { left: 4vw; } #touch .sr { left: calc(4vw + 23vh); }
+#touch .car { display: none; }
+#touch.incar .car { display: flex; }
+#touch.incar .foot, #touch.incar #joyzone, #touch.incar #joy { display: none; }
+#touch .lc { display: none; } #touch.incar .lc { display: block; } #touch.incar .lf { display: none; }
+#touch .tb-top { position: absolute; top: 2vh; left: calc(2vh + 32vh); display: flex; gap: 1.2vh; pointer-events: none; }
+#touch .tb-top button { position: static; pointer-events: auto; width: auto; height: 7vh; padding: 0 2vh; border-radius: 6px; font-size: 2.4vh; font-weight: bold; }
 
-@media (max-width: 640px) {
-  #clock { font-size: 28px; } #money { font-size: 28px; } #stars { font-size: 22px; } #healthbar { width: 110px; }
-  #minimap { width: 120px; height: 120px; left: 12px; bottom: 12px; }
-  #speedo { left: 140px; bottom: 14px; font-size: 26px; }
-  #zone { font-size: 16px; bottom: auto; top: 14px; left: 12px; right: auto; } #vehname { font-size: 14px; bottom: auto; top: 40px; left: 12px; right: auto; }
-  #prompt { top: auto; bottom: 150px; left: 12px; max-width: 55vw; font-size: 13px; }
-  #tbtns { bottom: 24px; grid-template-columns: repeat(2, 58px); } #tbtns button { width: 58px; height: 58px; font-size: 22px; }
-  #big { font-size: 26px; top: 26%; } #sub { font-size: 15px; bottom: auto; top: 34%; }
-  #timer { top: 150px; font-size: 28px; } #hint { display: none; } #radio { font-size: 14px; top: 64px; }
-  #joy { bottom: 150px; }
+/* ---------- HUD en móvil (horizontal) ---------- */
+body.touch #minimap { left: 2vh; top: 2vh; bottom: auto; width: 30vh; height: 30vh; border-width: 3px; }
+body.touch #topright { top: 1.5vh; right: 2vh; }
+body.touch #clock { font-size: 6vh; } body.touch #money { font-size: 6vh; } body.touch #stars { font-size: 4.6vh; }
+body.touch #healthbar { width: 24vh; height: 2.2vh; border-width: 2px; } body.touch #records { font-size: 3.4vh; } body.touch #timer { font-size: 5.5vh; }
+body.touch #speedo { left: 4vw; bottom: 28vh; font-size: 5.5vh; }
+body.touch #zone { right: auto; left: 50%; transform: translateX(-50%); top: 12vh; bottom: auto; font-size: 4.2vh; white-space: nowrap; }
+body.touch #vehname { right: auto; left: 50%; transform: translateX(-50%); top: 18vh; bottom: auto; font-size: 3.4vh; white-space: nowrap; }
+body.touch #radio { top: 2.5vh; font-size: 3.2vh; left: 60%; }
+body.touch #big { font-size: 6.5vh; top: 25%; }
+body.touch #sub { bottom: 4vh; width: 46vw; font-size: 3.6vh; left: 50%; }
+body.touch #prompt { top: 11vh; left: 50%; transform: translateX(-50%); max-width: 50vw; font-size: 3.2vh; padding: 1vh 1.6vh; top: auto; bottom: 22vh; }
+body.touch #hint, body.touch #help { display: none; }
+body.touch #talk { right: auto; left: 50%; top: auto; bottom: 18vh; transform: translateX(-50%); flex-direction: row; flex-wrap: wrap; justify-content: center; max-width: 60vw; padding: 1vh; gap: 1vh; }
+body.touch #talk .tt { width: 100%; text-align: center; font-size: 3vh; }
+body.touch #talk button { font-size: 3vh; padding: 1.2vh 1.8vh; }
+body.touch #talk button i { display: none; }
+body.touch .bubble { font-size: 2.8vh; max-width: 30vw; }
+body.touch #title h1 { font-size: 13vh; } body.touch #title h2 { font-size: 5vh; margin: 1vh 0; }
+body.touch .story { font-size: 2.8vh; margin: 1vh auto; } body.touch #play { font-size: 4.5vh; padding: 1.5vh 6vh; }
+body.touch button.opt { font-size: 2.6vh; }
+
+@media (max-width: 640px) and (orientation: portrait) {
+  #clock { font-size: 28px; } #money { font-size: 28px; } #stars { font-size: 22px; }
 }

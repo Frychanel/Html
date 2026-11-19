@@ -2,14 +2,18 @@
 <html lang="es">
 <head>
 <meta charset="utf-8">
-<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no,viewport-fit=cover">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="screen-orientation" content="landscape">
 <title>Bahía Dorada</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
-<link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Rubik+Mono+One&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Rubik+Mono+One&family=Bangers&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="src/style.css">
 </head>
 <body>
 <canvas id="c"></canvas>
+<div id="loading">CARGANDO BAHÍA DORADA…</div>
 
 <div id="hud" class="hidden">
   <div id="topright">
@@ -18,58 +22,90 @@
     <div id="money">$00000000</div>
     <div id="stars"><span>★</span><span>★</span><span>★</span><span>★</span><span>★</span></div>
     <div id="records"></div>
+    <div id="timer"></div>
   </div>
   <canvas id="minimap" width="200" height="200"></canvas>
   <div id="speedo"></div>
   <div id="zone"></div>
   <div id="vehname"></div>
   <div id="radio"></div>
+  <div id="bubbles"></div>
   <div id="big"></div>
   <div id="sub"></div>
-  <div id="timer"></div>
   <div id="prompt"></div>
-  <div id="hint">I: controles · M: mapa · P: pausa</div>
+  <div id="hint">I: controles · E: hablar · Clic: golpear · M: mapa · P: pausa</div>
   <div id="help" class="hidden">
-    <b>A pie</b><br>WASD / flechas: moverse · Shift: correr · Espacio: saltar · Ratón: cámara<br>
-    <b>En coche</b><br>W: acelerar · S: frenar / marcha atrás · A/D: girar · Espacio: freno de mano · H: claxon<br>
-    <b>General</b><br>F o Enter: entrar/salir del coche · R: cambiar radio · C: distancia de cámara · M: mapa · P: pausa
+    <b>A pie</b><br>WASD: moverse · Shift: correr · Espacio: saltar · Ratón: cámara<br>
+    E: hablar / comprar / cambiarte de ropa · Clic o Q: golpear<br>
+    <b>Hablando</b><br>1 Saludar · 2 Charlar · 3 Provocar · 4 Dar $20 · 5 Adiós<br>
+    <b>En coche</b><br>W/S: acelerar/frenar · A/D: girar · Espacio: freno de mano · H: claxon · R: radio<br>
+    <b>General</b><br>F: entrar/salir · C: cámara · M: mapa · P: pausa
+  </div>
+  <div id="talk" class="hidden">
+    <div class="tt">Hablando con <b id="talkname"></b></div>
+    <button data-o="1"><i>1</i> Saludar</button>
+    <button data-o="2"><i>2</i> Charlar</button>
+    <button data-o="3"><i>3</i> Provocar</button>
+    <button data-o="4"><i>4</i> Dar $20</button>
+    <button data-o="5"><i>5</i> Adiós</button>
   </div>
   <div id="fade"></div>
 </div>
 
 <canvas id="bigmap" class="hidden" width="800" height="800"></canvas>
 
-<div id="title">
+<div id="collage" class="hidden"></div>
+<div id="cine" class="hidden"><div class="bar top"></div><div class="bar bot"></div><div id="cinetext"></div><div id="skip">Toca o pulsa una tecla para saltar ▸</div></div>
+
+<div id="title" class="hidden">
   <div class="tbox">
     <h1>BAHÍA<br>DORADA</h1>
     <h2>Crónicas de la Costa · 2005</h2>
-    <p class="story">Después de cinco años fuera, Rafa vuelve a su barrio. La ciudad cambió poco,
-      pero sus viejos contactos todavía tienen trabajos para él.</p>
+    <p class="story">Después de cinco años fuera, Rafa vuelve a su barrio. La ciudad está llena de gente, de tráfico y de viejos conocidos con trabajos para él.</p>
     <button id="play">JUGAR</button>
-    <div class="ctrl">
-      <div><b>WASD</b> moverse / conducir</div>
-      <div><b>F</b> entrar / salir del coche</div>
-      <div><b>Ratón</b> mover la cámara</div>
-      <div><b>Espacio</b> saltar / freno de mano</div>
-      <div><b>Shift</b> correr · <b>R</b> radio</div>
-      <div><b>M</b> mapa · <b>P</b> pausa</div>
+    <div class="opts">
+      <button class="opt" id="optIntro">Presentación: <b class="introlabel">Cinemática</b></button>
+      <button class="opt optGfx">Gráficos: <b class="gfxlabel">Realista</b></button>
+      <button class="opt" id="optReplay">▶ Ver presentación</button>
     </div>
-    <p class="small">Busca las letras amarillas del mapa para conseguir misiones. Hay 25 discos de oro escondidos.</p>
+    <div class="ctrl desk">
+      <div><b>WASD</b> moverse / conducir</div><div><b>F</b> entrar / salir del coche</div>
+      <div><b>E</b> hablar con la gente</div><div><b>Clic</b> golpear</div>
+      <div><b>Espacio</b> saltar / freno de mano</div><div><b>R</b> radio · <b>M</b> mapa</div>
+    </div>
+    <p class="small">En móvil se juega en horizontal.</p>
   </div>
 </div>
 
-<div id="pause" class="hidden"><div class="tbox"><h1 style="font-size:54px">PAUSA</h1><button id="resume">CONTINUAR</button>
+<div id="pause" class="hidden"><div class="tbox"><h1 style="font-size:54px">PAUSA</h1>
+  <button id="resume">CONTINUAR</button><br>
+  <button class="opt optGfx">Gráficos: <b class="gfxlabel">Realista</b></button><br>
   <button id="reset" class="ghost">Borrar partida</button></div></div>
 
+<div id="rotate" class="hidden"><div class="phone"></div><p>Gira el teléfono para jugar en horizontal</p></div>
+
 <div id="touch" class="hidden">
+  <div id="joyzone"></div>
   <div id="joy"><div id="knob"></div></div>
-  <div id="tbtns">
-    <button data-k="enter">🚗</button>
-    <button data-k="jump">⤒</button>
-    <button data-k="sprint">»</button>
-    <button data-k="radio">📻</button>
-    <button data-k="map">🗺</button>
+  <div class="tb-top">
+    <button data-k="pause" class="sm">❚❚</button>
+    <button data-k="map" class="sm">MAPA</button>
+    <button data-k="cam" class="sm">CÁM</button>
   </div>
+  <!-- a pie -->
+  <button data-k="sprint" class="act foot b-main"><span>CORRER</span>»</button>
+  <button data-k="jump" class="act foot b-a"><span>SALTAR</span>⤒</button>
+  <button data-k="punch" class="act foot b-b"><span>GOLPE</span>👊</button>
+  <button data-k="enter" class="act b-c"><span class="lf">SUBIR</span><span class="lc">BAJAR</span>🚗</button>
+  <button data-k="talk" id="btnTalk" class="act foot b-d hidden">💬</button>
+  <!-- en coche -->
+  <button data-k="gas" class="act car b-main"><span>ACELERAR</span>▲</button>
+  <button data-k="brake" class="act car b-e"><span>FRENO</span>▼</button>
+  <button data-k="hb" class="act car b-b"><span>F. MANO</span>⏹</button>
+  <button data-k="horn" class="act car b-a"><span>CLAXON</span>📯</button>
+  <button data-k="radio" class="act car b-d"><span>RADIO</span>📻</button>
+  <button data-k="left" class="act car steer sl">◀</button>
+  <button data-k="right" class="act car steer sr">▶</button>
 </div>
 
 <script src="vendor/three.min.js"></script>
