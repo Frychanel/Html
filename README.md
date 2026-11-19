@@ -21,6 +21,13 @@ Selector en el menú y en la pausa: **Ultra · Alta · Media · Clásico 2005**.
 - Noche con farolas que iluminan el suelo y faros del coche con haz de luz.
 - Sombras de hasta 4096 px y sombra de contacto bajo los coches.
 
+## Texturas fotográficas y cielo real (v4)
+- Asfalto, aceras, ladrillo, revoco, césped, arena y tejas con **texturas fotográficas PBR** (color, relieve y rugosidad) de Poly Haven (CC0).
+- **Cielo HDRI real** con nubes durante el día, mezclado con el ciclo de día y noche. También se usa para los reflejos.
+- Marcas viales separadas: doble línea amarilla y bordes blancos.
+- Créditos en `assets/textures/CREDITS.md`.
+- `node tools/build-assets.js` regenera `src/assets-data.js`; `node tools/build-single.js salida.html` crea el juego en un solo archivo.
+
 ## Controles (PC)
 WASD moverse/conducir · Ratón cámara · Shift correr · Espacio saltar/freno de mano · F entrar/salir ·
 E hablar/interactuar · Clic o Q golpear · R radio · H claxon · M mapa · C cámara · P pausa.

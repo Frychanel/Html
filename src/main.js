@@ -47,7 +47,12 @@ scene.traverse(o => { if (o.material && !Array.isArray(o.material) && o.material
 PERSON_MAT.envMapIntensity = 0.35;
 const pmrem = new THREE.PMREMGenerator(renderer);
 const envScene = new THREE.Scene(); const envSky = new THREE.Mesh(World.sky.geometry, World.skyMat); envScene.add(envSky);
-let envRT = null, envT = -999;
+let envRT = null, envT = -999, hdriReady = false;
+if (window.THREE_EXTRA && window.ASSET_DATA && ASSET_DATA.sky) {
+  new THREE_EXTRA.RGBELoader().load(ASSET_DATA.sky, tex => {
+    World.skyMat.uniforms.hdri.value = tex; hdriReady = true; envT = -999;
+  }, undefined, () => {});
+}
 function updateEnv(force) {
   if (!force && Math.abs(G.time - envT) < 15) return;
   envT = G.time;
@@ -873,6 +878,10 @@ function updateDayNight(dt) {
   tmpB.copy(SKY.nightHor).lerp(SKY.dayHor, day).lerp(SKY.setHor, set * 0.85);
   const u = World.skyMat.uniforms; u.top.value.copy(tmpA); u.horizon.value.copy(tmpB);
   u.ground.value.copy(tmpB).multiplyScalar(0.55);
+  const hm = hdriReady && settings.gfx !== 'retro' ? clamp((day - 0.35) / 0.4, 0, 1) * (1 - set * 0.8) : 0;
+  if (Math.abs(u.hdriMix.value - hm) > 0.04) envT = -999;
+  u.hdriMix.value = hm; u.hdriMul.value = 0.9;
+  World.cloudMat.opacity = 0.85 * (1 - hm);
   _sd.set(Math.cos(ang) * 0.85, elev, 0.45).normalize();
   if (elev < -0.05) _sd.set(-_sd.x, Math.abs(_sd.y) + 0.2, -_sd.z).normalize();
   u.sunDir.value.copy(_sd);

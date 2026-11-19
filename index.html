@@ -111,8 +111,16 @@
 <script src="vendor/three.min.js"></script>
 <script src="src/audio.js"></script>
 <script src="src/post.js"></script>
-<script src="src/world.js"></script>
-<script src="src/entities.js"></script>
-<script src="src/main.js"></script>
+<script src="vendor/three-extras.js"></script>
+<script src="src/assets-data.js"></script>
+<script src="src/loader.js"></script>
+<script>
+// Carga la ciudad cuando las texturas están listas.
+whenAssetsReady(function () {
+  ['src/world.js', 'src/entities.js', 'src/main.js'].reduce((p, src) => p.then(() => new Promise(r => {
+    const s = document.createElement('script'); s.src = src; s.onload = r; document.body.appendChild(s);
+  })), Promise.resolve());
+});
+</script>
 </body>
 </html>
